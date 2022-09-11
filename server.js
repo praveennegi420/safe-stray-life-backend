@@ -11,7 +11,7 @@ const auth = require('./middleware/auth')
 const { passwordStrength } = require('check-password-strength')
 const { HelpModel, UserModel } = require('./models/model')
 const { cloudinary } = require('./middleware/cloudinary')
-require('dotenv').config({ path: './.env' })
+require('dotenv').config()
 
 app.use(cors())
 app.use(bodyParser.json({ limit: '20mb' }))
