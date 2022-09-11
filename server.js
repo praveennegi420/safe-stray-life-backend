@@ -11,14 +11,14 @@ const auth = require('./middleware/auth')
 const { passwordStrength } = require('check-password-strength')
 const { HelpModel, UserModel } = require('./models/model')
 const { cloudinary } = require('./middleware/cloudinary')
-require('dotenv').config()
-
-app.use(cors())
+require('dotenv').config() 
+ 
+app.use(cors()) 
 app.use(bodyParser.json({ limit: '20mb' }))
 app.use(express.static('./build'))
 app.use(bodyParser.urlencoded({ extended: true }))
 
-const dataBase = process.env.MONGODB
+const dataBase = `mongodb+srv://${process.env.USER}:${process.env.PASSWORD}@cluster0.yepvd.mongodb.net/?retryWrites=true&w=majority`
 
 mongoose.connect(dataBase,
     { useNewUrlParser: true, useUnifiedTopology: true })
