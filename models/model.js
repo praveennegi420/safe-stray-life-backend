@@ -10,6 +10,12 @@ const HelpSchema = new mongoose.Schema({
 
 });
 
+const tokenSchema= new mongoose.Schema({
+  userID: { type: mongoose.Schema.Types.ObjectId, required: true, ref:'user', unique: true},
+  token: { type: String, required: true},
+  createdAt: { type: Date, default: Date.now(), expires: 3600}
+})
+
 const UserSchema = new mongoose.Schema({
   user: { type: String, required: true, unique: true },
   name: { type: String, default: 'N/a' },
@@ -19,10 +25,10 @@ const UserSchema = new mongoose.Schema({
   address: { type: String, default: "N/a" },
   about: { type: String, default: "N/a" },
   gender: { type: String, default: 'N/a' },
-  contact: { type: Number },
+  verified: {type: Boolean, default: false},
   volunteer: { type: Boolean, default: false },
+  contact: { type: Number },
   dob: { type: Date },
-
   avatar: {
     publicId: { type: String },
     url: { type: String, default: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQP-i5liksKo3g85Qz90jpYieJ4J_YGy5S7JQ&usqp=CAU' }
@@ -34,5 +40,6 @@ const UserSchema = new mongoose.Schema({
 
 const HelpModel = mongoose.model("HelpModel", HelpSchema);
 const UserModel = mongoose.model("UserModels", UserSchema);
+const TokenModel= mongoose.model("TokenModel", tokenSchema);
 
-module.exports = { HelpModel, UserModel }
+module.exports = { HelpModel, UserModel , TokenModel}

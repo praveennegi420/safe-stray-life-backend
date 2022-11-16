@@ -9,8 +9,10 @@ const app = express()
 const jwt = require('jsonwebtoken')
 const auth = require('./middleware/auth')
 const { passwordStrength } = require('check-password-strength')
-const { HelpModel, UserModel } = require('./models/model')
+const { HelpModel, UserModel, TokenModel } = require('./models/model')
 const { cloudinary } = require('./middleware/cloudinary')
+const sendEmail= require('./middleware/sendEmail')
+const crypto= require('crypto')
 require('dotenv').config({path:'./.env'}) 
  
 app.use(cors()) 
@@ -43,7 +45,7 @@ app.post('/help', auth, async (req, res) => {
     const newData = await new HelpModel({
         location: req.body.location,
         contact: req.body.contact,
-        about: req.body.about,
+        about: req.body.about,      
         img: {
             url: avatar.secure_url,
             publicID: avatar.public_id
@@ -66,13 +68,26 @@ app.get('/volunteer', async (req, res) => {
 
 
 app.post('/login', async (req, res) => {
-
+    
     const user = await UserModel.findOne({ user: req.body.user }).lean()
     if (!user) return res.json({ status: 'error', error: 'Register First.' })
 
     const passCheck = await bcrypt.compare(req.body.passwd, user.password)
 
     if (passCheck) {
+        if(!user.verified){
+            const emailToken= await TokenModel.findOne({userID: user._id});
+            if(!emailToken){
+                const emailToken= await new TokenModel({
+                    userID: user._id,
+                    token: crypto.randomBytes(32).toString('hex')
+                }).save();
+        
+                const url= `${process.env.BASE_URL}users/${user._id}/verify/${emailToken.token}`
+                await sendEmail(user.email, "Verify Email", url);
+            } 
+            return res.json({status: 'error', error: 'Email verification needed.'})
+        }
         const token = jwt.sign({ id: user._id, username: user.user }, process.env.JWT_SECRET)
         return res.json({ status: 'ok', token })
     }
@@ -80,7 +95,7 @@ app.post('/login', async (req, res) => {
 })
 
 app.post('/register', async (req, res) => {
-
+    
     const strength = passwordStrength(req.body.passwd).value
     if (req.body.user.length < 8)
         return res.json({ status: "error", error: "Username must be of 8 characters." })
@@ -89,11 +104,21 @@ app.post('/register', async (req, res) => {
         return res.json({ status: 'error', error: 'Weak Password.' })
 
     const password = await bcrypt.hash(req.body.passwd, 10)
-
+    
     try {
-        await UserModel.create({
+        const user= await UserModel.create({
             user: req.body.user, password, email: req.body.email
         })
+        
+        const emailToken= await TokenModel.create({
+            userID: user._id,
+            token: crypto.randomBytes(32).toString('hex')
+        });
+        
+        const url= `Click to verify: ${process.env.BASE_URL}users/${user._id}/verify/${emailToken.token}`
+        await sendEmail(user.email, "Verify Email Address", url);
+
+        return res.json({status:'ok', message: 'Verification mail sent.'})
     } catch (err) {
         if (err.code === 11000)
             return res.json({ status: 'error', error: 'User Alredy Exists' })
@@ -103,7 +128,9 @@ app.post('/register', async (req, res) => {
 })
 
 app.post('/getprofile', auth, async (req, res) => {
-    const posts = await HelpModel.find({ user: req.user._id })
+    let posts
+    if(req.user.user==='iamadmin') posts= await HelpModel.find({ verified: false })
+    else posts= await HelpModel.find({ user: req.user._id })
     const data = req.user
 
     res.json({ data, posts })
@@ -137,6 +164,34 @@ app.post('/be-volunteer', auth, async (req, res) => {
     if (req.user.name === 'N/a') return res.json({ status: 'error', error: "Insufficient details. Update Profile First." })
     await req.user.updateOne({ volunteer: req.body.volunteer })
     res.send('volunteered')
+})
+
+app.get('/users/:id/verify/:token', async(req, res) => {
+    
+    try{
+
+        const user= await UserModel.findOne({_id: req.params.id})
+        if(!user) return res.json({status:'error', error:'Invalid Link'});
+        const token= await TokenModel.findOne({userID: user._id, token: req.params.token})
+        if(!token) return res.json({status: 'error', error:'Invalid Link'})
+        await user.updateOne({verified: true})
+        await token.remove()
+        res.json({status: 'ok', message: 'User Verified.'})
+    } catch(err){
+        console.log('Error occured in user verification');
+    }
+})
+
+app.post('/post/:id', async (req, res) => {
+    console.log(req.params.id)
+    const post = await HelpModel.findById(req.params.id)
+    res.json({post})
+})
+
+app.post('/volunteer/:id', async (req, res) => {
+    console.log(req.params.id, 'in volunteer')
+    const post = await UserModel.findById(req.params.id)
+    res.json({post})
 })
 
 app.get('*', (req, res) => {
