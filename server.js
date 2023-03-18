@@ -116,15 +116,15 @@ app.post('/register', async (req, res) => {
         });
         
         const url= `Click to verify: ${process.env.BASE_URL}users/${user._id}/verify/${emailToken.token}`
-        await sendEmail(user.email, "Verify Email Address", url);
+        await sendEmail(user.email, "Verify Email Address", url)
+        .then(() =>   { res.json({status:'ok', message: 'Verification mail sent.'})})
+        .catch(err => { res.json({status:'ok', message: 'Faile to sent verification mail.'}) })
 
-        return res.json({status:'ok', message: 'Verification mail sent.'})
     } catch (err) {
         if (err.code === 11000)
             return res.json({ status: 'error', error: 'User Alredy Exists' })
         throw err
     }
-    res.json({ status: 'ok' })
 })
 
 app.post('/getprofile', auth, async (req, res) => {
@@ -180,7 +180,7 @@ app.get('/users/:id/verify/:token', async(req, res) => {
     } catch(err){
         console.log('Error occured in user verification');
     }
-})
+}) 
 
 app.post('/post/:id', async (req, res) => {
     console.log(req.params.id)

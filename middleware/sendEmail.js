@@ -8,7 +8,6 @@ module.exports= async(email, subject, text) => {
             auth:{
                 user: process.env.USER,
                 pass: process.env.PASS
-                // pass: 'lodosrnchtoyeuzf'
             }
         });
 
@@ -17,10 +16,8 @@ module.exports= async(email, subject, text) => {
             to: email,
             subject,
             text
-        }, (err, info) => {
-            if(err) { console.log("Email Not sent", err)}
-            else console.log("Email Sent successfully.")
-        });
+       }).then(() => console.log('Email sent Successfully'))
+        .catch(err => console.log('Email not sent', err));
     }
     catch(err){
         console.log("Email not sent")
