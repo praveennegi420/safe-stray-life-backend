@@ -194,10 +194,10 @@ app.post('/volunteer/:id', async (req, res) => {
     res.json({post})
 })
 
-app.get('/', (req, res) => {
-    console.log('fetch')
-    res.sendFile(path.resolve(__dirname + '/index.html'))
-})
+// app.get('/', (req, res) => {
+//     console.log('fetch')
+//     res.sendFile(path.resolve(__dirname + '/index.html'))
+// })
 
 const port = process.env.PORT || 8000
 app.listen(port, () => console.log(`SERVER RUNNING AT PORT ${port}`))
