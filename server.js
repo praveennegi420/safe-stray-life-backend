@@ -194,7 +194,7 @@ app.post('/volunteer/:id', async (req, res) => {
     res.json({post})
 })
 
-app.get('*', (req, res) => {
+app.get('/', (req, res) => {
     console.log('fetch')
     res.sendFile(path.resolve(__dirname + '/index.html'))
 })
